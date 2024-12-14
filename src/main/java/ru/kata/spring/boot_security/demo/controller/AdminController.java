@@ -10,7 +10,6 @@ import ru.kata.spring.boot_security.demo.service.RoleService;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
 import javax.validation.Valid;
-import java.util.List;
 
 @Controller
 @RequestMapping("/admin")
@@ -33,7 +32,7 @@ public class AdminController {
 
     @PostMapping("/users")
     public String createUser(@Valid @ModelAttribute("user") User user,
-                             BindingResult bindingResult,  Model model) {
+                             BindingResult bindingResult, Model model) {
         model.addAttribute("allRoles", roleService.getAllRoles());
         if (bindingResult.hasErrors()) {
             return "new";
@@ -58,8 +57,14 @@ public class AdminController {
     @PostMapping("/edit")
     public String updateUser(@Valid @ModelAttribute("user") User user,
                              BindingResult bindingResult, @RequestParam("id") Long id, Model model) {
+        User currentUser = userService.findUserById(id);
+        if (!currentUser.getUsername().equalsIgnoreCase(user.getUsername())) {
+            if (userService.findByUsername(user.getUsername()) != null) {
+                bindingResult.rejectValue("username", "error.user", "Логин уже используется");
+            }
+        }
         model.addAttribute("allRoles", roleService.getAllRoles());
-        if (bindingResult.hasErrors() && !userService.findUserById(id).getUsername().equals(user.getUsername())) {
+        if (bindingResult.hasErrors()) {
             return "edit";
         }
         userService.updateUserById(id, user);
